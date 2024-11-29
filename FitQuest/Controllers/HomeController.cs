@@ -11,15 +11,32 @@ namespace FitQuest.Controllers
     {
         private readonly IDietPlanService _dietPlanService;
         private readonly ApplicationDbContext _context;
-
+         private static string _cachedQuote; // Cached quote
+        private static DateTime _lastUpdatedDate; // Last update date
         public HomeController(IDietPlanService dietPlanService, ApplicationDbContext context)
         {
             _dietPlanService = dietPlanService;
             _context = context;
         }
 
-        public IActionResult Index()
+         public IActionResult Index()
         {
+            // Check if the cached quote needs to be refreshed (new day)
+            if (_cachedQuote == null || _lastUpdatedDate.Date != DateTime.Now.Date)
+            {
+                // Fetch a new random quote from the database
+                _cachedQuote = _context.MQuotes
+                    .OrderBy(q => Guid.NewGuid())
+                    .Select(q => q.MQuote)
+                    .FirstOrDefault();
+
+                // Update the last updated date
+                _lastUpdatedDate = DateTime.Now;
+            }
+
+            // Pass the cached quote to the view
+            ViewData["MotivationalQuote"] = _cachedQuote;
+
             return View();
         }
 
